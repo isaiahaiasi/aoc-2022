@@ -1,15 +1,14 @@
 import sys
 
 
-def get_type(rucksack):
+def get_common(rucksack):
     middle = len(rucksack)//2
-    sack1 = rucksack[:middle]
-    sack2 = rucksack[middle:]
+    first_half = rucksack[:middle]
+    second_half = rucksack[middle:]
 
     # worse time complexity but quick lol
-    # n^2, stop at first shared
-    for item in sack1:
-        for other_item in sack2:
+    for item in first_half:
+        for other_item in second_half:
             if item == other_item:
                 return item
     raise Exception('no shared item')
@@ -17,7 +16,6 @@ def get_type(rucksack):
 
 def get_badge(sacks):
     # HORRIBLE time complexity but probably quick enough...
-    # n^3, stop at first shared
     for item1 in sacks[0]:
         for item2 in sacks[1]:
             for item3 in sacks[2]:
@@ -35,11 +33,11 @@ def get_priority(item: str):
         return ord(item) - ord('A') + 27
 
 
-def priority_sum(input):
-    rucksack_sum = 0
+def get_priority_sum(input):
+    priority_sum = 0
     for rucksack in input:
-        rucksack_sum += get_priority(get_type(rucksack))
-    return rucksack_sum
+        priority_sum += get_priority(get_common(rucksack))
+    return priority_sum
 
 
 # get groups (each 3 lines)
@@ -47,8 +45,8 @@ def priority_sum(input):
 # get sum of value of each "badge"
 def get_badge_sum(input):
     badge_sum = 0
-    group_cnt = len(input) // 3
-    for i in range(group_cnt):
+    group_count = len(input) // 3
+    for i in range(group_count):
         rucksacks = input[i * 3: i * 3 + 3]
         badge = get_badge(rucksacks)
         badge_sum += get_priority(badge)
