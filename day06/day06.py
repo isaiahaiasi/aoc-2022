@@ -1,15 +1,10 @@
 import sys
-from collections import deque
 
 
 def find_marker(input, marker_len=4):
-    s = deque(input[0:marker_len])
     for i in range(marker_len, len(input)):
-        if len(set(s)) == marker_len:
+        if len(set(input[i - marker_len:i])) == marker_len:
             return i
-        s.append(input[i])
-        s.popleft()
-    return None
 
 
 def load_input(path):
