@@ -65,9 +65,8 @@ def main():
     path = sys.argv[1] if len(sys.argv) > 1 else 'input.txt'
     input = load_input(path)
 
-    result = get_badge_sum(input)
-
-    print(result)
+    print(get_priority_sum(input))
+    print(get_badge_sum(input))
 
 
 if __name__ == "__main__":
