@@ -11,8 +11,7 @@ DIRECTION = {
 
 class Point:
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.x, self.y = x, y
 
     def move_dir(self, direction):
         x, y = DIRECTION[direction]
@@ -44,21 +43,12 @@ class Knot:
         self.visited[self.pos.tup] = True
 
 
-def simulate_single(motions):
+def simulate(motions, knot_count=2):
+    if knot_count < 2:
+        raise Exception("knot_count must be >1 (at least a head & tail)")
+
     head = Point(0, 0)
-    tail = Knot(0, 0)
-
-    for direction, velocity in motions:
-        for _ in range(velocity):
-            head.move_dir(direction)
-            tail.move_to(head)
-
-    return len(tail.visited.keys())
-
-
-def simulate_n(motions, n):
-    head = Point(0, 0)
-    knots = [Knot(0, 0) for _ in range(n)]
+    knots = [Knot(0, 0) for _ in range(knot_count - 1)]
 
     for direction, velocity in motions:
         for _ in range(velocity):
@@ -78,8 +68,8 @@ def main():
 
     puzzle_input = [(d, int(v)) for d, v in motions]
 
-    print(simulate_single(puzzle_input))  # 6269
-    print(simulate_n(puzzle_input, 9))  # 2557
+    print("2 knots: ", simulate(puzzle_input))  # 6269
+    print("10 knots:", simulate(puzzle_input, 10))  # 2557
 
 
 if __name__ == "__main__":
