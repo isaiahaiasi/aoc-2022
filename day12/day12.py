@@ -32,15 +32,13 @@ class Solver:
         return adjacent_coords
 
     def bfs_1(self):
-        queue = deque()
-        visited = {}
-        visited[self.start] = 0
-        queue.append(self.start)
+        queue = deque([self.start])
+        visited = {self.start: 0}
 
         while queue:
             r = queue.popleft()
             for n in self.get_neighbors(*r):
-                if n not in visited or visited[n] > visited[r] + 1:
+                if n not in visited:
                     visited[n] = visited[r] + 1
                     queue.append(n)
         return visited[self.end]
@@ -55,14 +53,13 @@ class Solver:
 
     # searching from end, trying to find the first 'a'
     def bfs_2(self):
-        queue = deque()
+        queue = deque([self.end])
         visited = {self.end: 0}
-        queue.append(self.end)
 
         while queue:
             r = queue.popleft()
             for (x, y) in self.get_neighbors_reversed(*r):
-                if (x, y) not in visited or visited[(x, y)] > visited[r] + 1:
+                if (x, y) not in visited:
                     visited[(x, y)] = visited[r] + 1
                     queue.append((x, y))
                     if self.grid[y][x] == ord('a'):
