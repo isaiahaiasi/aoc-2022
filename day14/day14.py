@@ -1,47 +1,40 @@
 import sys
 from itertools import chain
 
-EMPTY = '.'
-ROCK = '#'
-SAND = 'o'
-
 
 def sign(x):
     return 0 if x == 0 else x//abs(x)
 
 
 class Cave:
-    def __init__(self, rocks, floor=None):
-        self.floor = floor
-        self.grid = {}
+    def __init__(self, rocks, has_floor=False):
+        self.obstacles = set()
+        self.lowest = max([y for x, y in list(chain(rocks))])
+        self.floor = self.lowest + 2 if has_floor else None
         for coords in rocks:
-            self.add(coords, ROCK)
+            self.add_obstacle(coords)
 
-    def add(self, pos, item):
+    def add_obstacle(self, pos):
+        self.obstacles.add(pos)
+
+    def has_obstacle(self, pos):
         x, y = pos
-        self.grid[(x, y)] = item
+        return (x, y) in self.obstacles or (self.floor and y >= self.floor)
 
-    def get(self, pos):
-        x, y = pos
-        if self.floor and y >= self.floor:
-            return ROCK
-        return self.grid.get((x, y), EMPTY)
-
-
-def drop_sand(grid, giveup_height=None, entry_pos=(500, 0)):
-    cx, cy = entry_pos
-    while True:
-        if giveup_height and cy > giveup_height:
-            return False
-        elif grid.get((cx, cy + 1)) == EMPTY:
-            cy += 1
-        elif grid.get((cx - 1, cy + 1)) == EMPTY:
-            cx, cy = cx - 1, cy + 1
-        elif grid.get((cx + 1, cy + 1)) == EMPTY:
-            cx, cy = cx + 1, cy + 1
-        else:
-            grid.add((cx, cy), SAND)
-            return (cx, cy) != entry_pos
+    def drop_sand(self, entry_pos=(500, 0)):
+        cx, cy = entry_pos
+        while True:
+            if self.has_obstacle(entry_pos) or (cy > self.lowest and not self.floor):
+                return False
+            elif not self.has_obstacle((cx, cy + 1)):
+                cy += 1
+            elif not self.has_obstacle((cx - 1, cy + 1)):
+                cx, cy = cx - 1, cy + 1
+            elif not self.has_obstacle((cx + 1, cy + 1)):
+                cx, cy = cx + 1, cy + 1
+            else:
+                self.add_obstacle((cx, cy))
+                return True
 
 
 def get_rocks(data):
@@ -53,35 +46,25 @@ def get_rocks(data):
             xb, yb = line[i]
             xd, yd = xb - xa, yb - ya
             for j in range(abs(xd) + abs(yd)):
-                rocks.append([xa + (sign(xd) * (j + 1)),
-                             ya + (sign(yd) * (j + 1))])
+                x_incr, y_incr = sign(xd) * (j + 1), sign(yd) * (j + 1)
+                rocks.append((xa + x_incr, ya + y_incr))
     return rocks
-
-
-def get_lowest(rocks):
-    return max([y for x, y in list(chain(rocks))])
 
 
 def part_1(rocks):
     grid = Cave(rocks)
     sand_count = 0
-    lowest_rock_height = get_lowest(rocks)
-    while True:
-        if drop_sand(grid, lowest_rock_height):
-            sand_count += 1
-        else:
-            break
+    while grid.drop_sand():
+        sand_count += 1
     return sand_count
 
 
 def part_2(rocks):
-    grid = Cave(rocks, get_lowest(rocks) + 2)
+    grid = Cave(rocks, True)
 
     sand_count = 0
-    while True:
+    while grid.drop_sand():
         sand_count += 1
-        if not drop_sand(grid):
-            break
     return sand_count
 
 
@@ -89,7 +72,7 @@ def load_input(path):
     with open(path, "r") as fp:
         rocks = []
         for line in fp.readlines():
-            points = [[int(x) for x in v.split(',')]
+            points = [tuple([int(x) for x in v.split(',')])
                       for v in line.strip().split(' -> ')]
             rocks += [points]
         return rocks
