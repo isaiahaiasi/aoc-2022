@@ -2,40 +2,43 @@ import sys
 from itertools import chain
 
 
-def sign(x):
-    return 0 if x == 0 else x//abs(x)
+def sign(x): return 0 if x == 0 else x//abs(x)
 
 
 class Cave:
     def __init__(self, rocks, has_floor=False):
-        self.obstacles = set()
+        self.w, self.h = 1000, 1000
+        self.obstacles = [[False]*self.w for _ in range(self.h)]
         self.lowest = max([y for x, y in list(chain(rocks))])
-        self.floor = self.lowest + 2 if has_floor else None
-        for coords in rocks:
-            self.add_obstacle(coords)
+        self.has_floor = has_floor
 
-    def add_obstacle(self, pos):
-        self.obstacles.add(pos)
+        for x, y in rocks:
+            self.add_obstacle(x, y)
+        if has_floor:
+            for i in range(self.w):
+                self.add_obstacle(i, self.lowest + 2)
 
-    def has_obstacle(self, pos):
-        x, y = pos
-        return (x, y) in self.obstacles or (self.floor and y >= self.floor)
+    def add_obstacle(self, x, y):
+        self.obstacles[y][x] = True
 
-    def drop_sand(self, entry_pos=(500, 0)):
-        cx, cy = entry_pos
+    def has_obstacle(self, x, y):
+        return self.obstacles[y][x]
+
+    def drop_sand(self, entry_x=500, entry_y=0):
+        cx, cy = entry_x, entry_y
         while True:
-            if (self.has_obstacle(entry_pos)
-                    or cy > self.lowest and not self.floor):
+            if (self.has_obstacle(entry_x, entry_y)
+                    or cy > self.lowest and not self.has_floor):
                 return False
-            elif not self.has_obstacle((cx, cy + 1)):
+            elif not self.has_obstacle(cx, cy + 1):
                 cy += 1
-            elif not self.has_obstacle((cx - 1, cy + 1)):
+            elif not self.has_obstacle(cx - 1, cy + 1):
                 cx, cy = cx - 1, cy + 1
-            elif not self.has_obstacle((cx + 1, cy + 1)):
+            elif not self.has_obstacle(cx + 1, cy + 1):
                 cx, cy = cx + 1, cy + 1
             else:
-                self.add_obstacle((cx, cy))
-                cx, cy = entry_pos
+                self.add_obstacle(cx, cy)
+                cx, cy = entry_x, entry_y
                 yield True
 
 
@@ -57,13 +60,12 @@ def load_input(path):
     with open(path, "r") as fp:
         rocks = []
         for line in fp.readlines():
-            points = [tuple([int(x) for x in v.split(',')])
-                      for v in line.strip().split(' -> ')]
-            rocks += [points]
+            rocks.append([tuple([int(x) for x in v.split(',')])
+                          for v in line.strip().split(' -> ')])
         return rocks
 
 
 path = sys.argv[1] if len(sys.argv) > 1 else './day14/test-input.txt'
 rock_data = get_rocks(load_input(path))
-print("PART A:", sum(Cave(rock_data).drop_sand()))
-print("PART B:", sum(Cave(rock_data, has_floor=True).drop_sand()))
+print("PART A:", sum(Cave(rock_data).drop_sand()))  # 1072
+print("PART B:", sum(Cave(rock_data, has_floor=True).drop_sand()))  # 24_659
