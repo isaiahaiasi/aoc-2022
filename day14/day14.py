@@ -24,7 +24,8 @@ class Cave:
     def drop_sand(self, entry_pos=(500, 0)):
         cx, cy = entry_pos
         while True:
-            if self.has_obstacle(entry_pos) or (cy > self.lowest and not self.floor):
+            if (self.has_obstacle(entry_pos)
+                    or cy > self.lowest and not self.floor):
                 return False
             elif not self.has_obstacle((cx, cy + 1)):
                 cy += 1
@@ -34,7 +35,8 @@ class Cave:
                 cx, cy = cx + 1, cy + 1
             else:
                 self.add_obstacle((cx, cy))
-                return True
+                cx, cy = entry_pos
+                yield True
 
 
 def get_rocks(data):
@@ -51,23 +53,6 @@ def get_rocks(data):
     return rocks
 
 
-def part_1(rocks):
-    grid = Cave(rocks)
-    sand_count = 0
-    while grid.drop_sand():
-        sand_count += 1
-    return sand_count
-
-
-def part_2(rocks):
-    grid = Cave(rocks, True)
-
-    sand_count = 0
-    while grid.drop_sand():
-        sand_count += 1
-    return sand_count
-
-
 def load_input(path):
     with open(path, "r") as fp:
         rocks = []
@@ -79,9 +64,6 @@ def load_input(path):
 
 
 path = sys.argv[1] if len(sys.argv) > 1 else './day14/test-input.txt'
-data = load_input(path)
-
-rock_data = get_rocks(data)
-
-print("PART A:", part_1(rock_data))
-print("PART B:", part_2(rock_data))
+rock_data = get_rocks(load_input(path))
+print("PART A:", sum(Cave(rock_data).drop_sand()))
+print("PART B:", sum(Cave(rock_data, has_floor=True).drop_sand()))
