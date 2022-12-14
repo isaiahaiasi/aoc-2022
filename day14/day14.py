@@ -1,4 +1,5 @@
 import sys
+from itertools import chain
 
 EMPTY = '.'
 ROCK = '#'
@@ -9,43 +10,38 @@ def sign(x):
     return 0 if x == 0 else x//abs(x)
 
 
-class Grid:
-    def __init__(self, w, h, default=EMPTY):
-        self.w = w
-        self.h = h
-        self.grid = [[default]*w for _ in range(h)]
+class Cave:
+    def __init__(self, rocks, floor=None):
+        self.floor = floor
+        self.grid = {}
+        for coords in rocks:
+            self.add(coords, ROCK)
 
     def add(self, pos, item):
         x, y = pos
-        self.grid[y][x] = item
+        self.grid[(x, y)] = item
 
     def get(self, pos):
         x, y = pos
-        return self.grid[y][x]
-
-    def debug_view(self):
-        out = []
-        for i in self.grid[:100]:
-            out += [''.join(map(str, i[:100]))]
-        return '\n'.join(out)
+        if self.floor and y >= self.floor:
+            return ROCK
+        return self.grid.get((x, y), EMPTY)
 
 
-def drop_sand(grid, entry_pos=(500, 0)):
+def drop_sand(grid, giveup_height=None, entry_pos=(500, 0)):
     cx, cy = entry_pos
-    try:
-        while True:
-            if grid.get((cx, cy + 1)) == EMPTY:
-                cy += 1
-            elif grid.get((cx - 1, cy + 1)) == EMPTY:
-                cx, cy = cx - 1, cy + 1
-            elif grid.get((cx + 1, cy + 1)) == EMPTY:
-                cx, cy = cx + 1, cy + 1
-            else:
-                grid.add((cx, cy), SAND)
-                return True
-    except IndexError:
-        # keep trying until you run off the map, lol
-        return False
+    while True:
+        if giveup_height and cy > giveup_height:
+            return False
+        elif grid.get((cx, cy + 1)) == EMPTY:
+            cy += 1
+        elif grid.get((cx - 1, cy + 1)) == EMPTY:
+            cx, cy = cx - 1, cy + 1
+        elif grid.get((cx + 1, cy + 1)) == EMPTY:
+            cx, cy = cx + 1, cy + 1
+        else:
+            grid.add((cx, cy), SAND)
+            return (cx, cy) != entry_pos
 
 
 def get_rocks(data):
@@ -62,13 +58,31 @@ def get_rocks(data):
     return rocks
 
 
-def test_cardinal(rockline):
-    px, py = rockline[0]
-    for x, y in rockline[1:]:
-        if x != px and y != py:
-            return False
-        px, py = x, y
-    return True
+def get_lowest(rocks):
+    return max([y for x, y in list(chain(rocks))])
+
+
+def part_1(rocks):
+    grid = Cave(rocks)
+    sand_count = 0
+    lowest_rock_height = get_lowest(rocks)
+    while True:
+        if drop_sand(grid, lowest_rock_height):
+            sand_count += 1
+        else:
+            break
+    return sand_count
+
+
+def part_2(rocks):
+    grid = Cave(rocks, get_lowest(rocks) + 2)
+
+    sand_count = 0
+    while True:
+        sand_count += 1
+        if not drop_sand(grid):
+            break
+    return sand_count
 
 
 def load_input(path):
@@ -81,25 +95,10 @@ def load_input(path):
         return rocks
 
 
-def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else './day14/test-input.txt'
-    data = load_input(path)
+path = sys.argv[1] if len(sys.argv) > 1 else './day14/test-input.txt'
+data = load_input(path)
 
-    grid = Grid(999, 999)
-    # print(get_rocks(data))
+rock_data = get_rocks(data)
 
-    for coords in get_rocks(data):
-        grid.add(coords, ROCK)
-
-    sand_count = 0
-    while True:
-        if drop_sand(grid):
-            sand_count += 1
-        else:
-            break
-
-    print(grid.debug_view(), sand_count)
-
-
-if __name__ == "__main__":
-    main()
+print("PART A:", part_1(rock_data))
+print("PART B:", part_2(rock_data))
