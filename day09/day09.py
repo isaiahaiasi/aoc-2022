@@ -31,15 +31,11 @@ class Knot:
     # simulates pull towards attached point
     def move_to(self, point):
         dx, dy = point.x - self.pos.x, point.y - self.pos.y
-        x, y = 0, 0
-
         if abs(dx) > 1 or (abs(dx) == 1 and abs(dy) > 1):
-            x = dx / abs(dx)
+            self.pos.x += dx / abs(dx)
         if abs(dy) > 1 or (abs(dy) == 1 and abs(dx) > 1):
-            y = dy / abs(dy)
+            self.pos.y += dy / abs(dy)
 
-        self.pos.x += x
-        self.pos.y += y
         self.visited[self.pos.tup] = True
 
 
@@ -47,14 +43,13 @@ def simulate(motions, knot_count=2):
     if knot_count < 2:
         raise Exception("knot_count must be >1 (at least a head & tail)")
 
-    head = Point(0, 0)
-    knots = [Knot(0, 0) for _ in range(knot_count - 1)]
+    knots = [Knot(0, 0) for _ in range(knot_count)]
 
     for direction, velocity in motions:
         for _ in range(velocity):
-            head.move_dir(direction)
-            target = head
-            for knot in knots:
+            knots[0].pos.move_dir(direction)
+            target = knots[0].pos
+            for knot in knots[1:]:
                 knot.move_to(target)
                 target = knot.pos
 

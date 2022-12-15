@@ -28,7 +28,6 @@ class Monkey:
     def turn(self, part):
         for item in self.items:
             # print(f"Inspects item with a worry level of {item}")
-            # inspect each item
             item = self.operate(item)
 
             # print(f"Worry level increased to {item}")
