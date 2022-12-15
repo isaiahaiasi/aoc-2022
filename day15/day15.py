@@ -13,69 +13,65 @@ def get_manhatten(xa, ya, xb, yb):
     return abs(xb - xa) + abs(yb - ya)
 
 
-def walk_edge(sensor, sensor_range):
-    sx, sy = sensor
-    # NW
-    for i in range(sensor_range):
-        yield sx - i, sy - sensor_range + i
-    # SW
-    for i in range(sensor_range):
-        yield sx - sensor_range + i, sy + i
-    # SE
-    for i in range(sensor_range):
-        yield sx + i, sy + sensor_range - i
-    # NE
-    for i in range(sensor_range):
-        yield sx + sensor_range - i, sy - i
-
-
 class Solver:
-    def __init__(self, sensors, beacons):
+    def __init__(self, sensors: dict, beacons: set):
         self.sensors = sensors
         self.beacons = beacons
 
-
-def get_coverage(sensors: dict, beacons, y, cmin=float('-inf'), cmax=float('inf')):
-    coverage_set = set()
-    for sensor, delta in sensors.items():
+    def walk_edge(self, sensor: tuple[int, int]):
         sx, sy = sensor
-        coverage = (delta - abs(sy - y)) * 2 + 1
-        if coverage <= 0:
-            continue
-        cx = [x for x in range(sx - coverage // 2 - 1, sx + coverage // 2)]
-        for x in cx:
-            if x >= cmin and x <= cmax:
+        sensor_range = self.sensors[sensor] + 1  # one more to be outside edge
+        # NW
+        for i in range(sensor_range):
+            yield sx - i, sy - sensor_range + i
+        # SW
+        for i in range(sensor_range):
+            yield sx - sensor_range + i, sy + i
+        # SE
+        for i in range(sensor_range):
+            yield sx + i, sy + sensor_range - i
+        # NE
+        for i in range(sensor_range):
+            yield sx + sensor_range - i, sy - i
+
+    def has_sensor_coverage(self, x, y):
+        for spos, db in self.sensors.items():
+            sbx, sby = spos
+            sensor_delta = db - get_manhatten(sbx, sby, x, y)
+            if sensor_delta >= 0:
+                return True
+        return False
+
+    def get_row_coverage(self, y):
+        coverage_set = set()
+        for sensor, delta in self.sensors.items():
+            sx, sy = sensor
+            coverage = (delta - abs(sy - y)) * 2 + 1
+            if coverage <= 0:
+                continue
+            cx = [x for x in range(sx - coverage // 2 - 1, sx + coverage // 2)]
+            for x in cx:
                 coverage_set.add(x)
-    for bx, by in beacons:
-        if by == y:
-            coverage_set.discard(bx)
-    for bx, by in sensors.keys():
-        if by == y:
-            coverage_set.discard(bx)
-    return len(coverage_set)
+        for bx, by in self.beacons:
+            if by == y:
+                coverage_set.discard(bx)
+        for bx, by in self.sensors.keys():
+            if by == y:
+                coverage_set.discard(bx)
+        return len(coverage_set)
 
+    # walk edge of each diamond and find where it doesn't intersect another
+    def get_distress_position(self, cmax):
+        for sensor in self.sensors.keys():
+            for x, y in self.walk_edge(sensor):
+                if (in_2d_range((x, y), (cmax, cmax))
+                        and not self.has_sensor_coverage(x, y)):
+                    return (x, y)
 
-def has_sensor_coverage(sensors, pos):
-    x, y = pos
-    for spos, db in sensors.items():
-        sbx, sby = spos
-        sensor_delta = db - get_manhatten(sbx, sby, x, y)
-        if sensor_delta >= 0:
-            return True
-    return False
-
-
-# walk along the edge of each diamond
-# see if it intersects another
-# if not, then, maybe?
-# to start, just get a set of non-intersections in range
-def get_full_coverage(sensors, cmax):
-    for sensor, delta in sensors.items():
-        print(sensor)
-        for pos in walk_edge(sensor, delta+1):
-            if (in_2d_range(pos, (cmax, cmax))
-                    and not has_sensor_coverage(sensors, pos)):
-                return pos
+    def get_distress_frequency(self):
+        magic_num = 4_000_000  # why is it range and multiplier? magic!
+        x, y = self.get_distress_position(magic_num)
+        return x * magic_num + y
 
 
 def load_input(path):
@@ -93,13 +89,16 @@ def load_input(path):
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else './day15/test-input.txt'
     sensors, beacons = load_input(path)
-    # pprint(sensors)
 
-    print("PART A:", get_coverage(sensors, beacons, 2_000_000))
+    solver = Solver(sensors, beacons)
 
-    unx, uny = get_full_coverage(sensors, 4_000_000)
-    print(unx, uny)
-    print("PART 2:", unx * 4_000_000 + uny)
+    result_a = solver.get_row_coverage(2_000_000)
+    print("PART A:", result_a)
+    print("part A match:", result_a == 6078701)
+
+    result_b = solver.get_distress_frequency()
+    print("PART B:", result_b)
+    print("part B match:", result_b == 12567351400528)
 
 
 if __name__ == "__main__":
